@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32407.337
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CreditPayment.Api", "CreditPayment\CreditPayment.Api.csproj", "{DC34833C-D3AA-4B49-8AD1-C00873ED4F80}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CreditPayment.Tests", "CreditPayment.Tests\CreditPayment.Tests.csproj", "{AA3E1A48-B7AA-45D3-82EF-78A546B48803}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DC34833C-D3AA-4B49-8AD1-C00873ED4F80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC34833C-D3AA-4B49-8AD1-C00873ED4F80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC34833C-D3AA-4B49-8AD1-C00873ED4F80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC34833C-D3AA-4B49-8AD1-C00873ED4F80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA3E1A48-B7AA-45D3-82EF-78A546B48803}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA3E1A48-B7AA-45D3-82EF-78A546B48803}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA3E1A48-B7AA-45D3-82EF-78A546B48803}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA3E1A48-B7AA-45D3-82EF-78A546B48803}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5C68B6BB-6940-4843-B781-D3128691EE96}
+	EndGlobalSection
+EndGlobal
