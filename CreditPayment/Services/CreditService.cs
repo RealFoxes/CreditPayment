@@ -16,53 +16,97 @@ namespace CreditPayment.Api.Services
 
 		public List<CreditPaymentModel> CalculatePaymentsSchedule(CreditRequestModel credit)
 		{
+			List<CreditPaymentModel> payments;
+			switch (credit.Type)
+			{
+				case PaymentType.Annuity:
+					// Очень долго голову ломал, но так и не понял как хотят в тз видеть аннуететный по дням, сделал месячный расчёт без учета дня оплаты
+					payments = GetAnnuityPayments(credit);
+					break;
+				case PaymentType.Differentiated:
+					payments = GetDifferentiatedPayments(credit);
+					break;
+				default:
+					throw new NotImplementedException();
+			}
+
+			return payments;
+		}
+		private List<CreditPaymentModel> GetAnnuityPayments(CreditRequestModel credit)
+		{
 			var payments = new List<CreditPaymentModel>();
+			var currentDate = credit.StartDate.AddMonths(1);
+			var currentAmount = credit.Amount;
 
+			int totalMonths = GetTotalMonths(credit.StartDate, credit.EndDate);
+			var annuityPayment = CalculateAnnuityMonthPayment(credit.InterestRate, credit.Amount, totalMonths);
+
+			while (currentDate < credit.EndDate)
+			{
+				decimal percents = currentAmount * credit.InterestRate / 100 / 12;
+				currentAmount -= annuityPayment - percents;
+
+				payments.Add(new CreditPaymentModel
+				{
+					Date = currentDate,
+					BodyPayment = (annuityPayment - percents),
+					PercentsPayment = percents,
+					RemainingAmount = currentAmount
+				});
+
+
+				currentDate = currentDate.AddMonths(1);
+			}
+
+			return payments;
+		}
+		private decimal CalculateAnnuityMonthPayment(decimal interestRate, decimal amount, int durationInMonths)
+		{
+			decimal mountPercent = interestRate / (100 * 12);
+			var annuityPayment = 
+				(amount * mountPercent /
+				(decimal)(1 - Math.Pow((double)(1 + mountPercent), -durationInMonths)));
+
+			return annuityPayment;
+		}
+
+		private List<CreditPaymentModel> GetDifferentiatedPayments(CreditRequestModel credit)
+		{
+			var payments = new List<CreditPaymentModel>();
+			int totalMonths = GetTotalMonths(credit.StartDate, credit.EndDate);
 			var currentDate = credit.StartDate;
-
-			// 16.05.2023 | 16.05.2024 => 12 months 
-			var totalMonths = ((credit.EndDate.Year - credit.StartDate.Year) * 12) + credit.EndDate.Month - credit.StartDate.Month;
-			if (credit.PaymentDay < credit.StartDate.Day)
-				totalMonths--;
 
 			var currentAmount = credit.Amount;
 			var bodyPayment = credit.Amount / totalMonths;
 
 			decimal percentsPayment = 0;
+
 			while (currentDate <= credit.EndDate)
 			{
-				// credit.PaymentDay 31 | currentDate.Day = 25 | currentDate.Month = February | max 28-29 days
-				// credit.PaymentDay 31 | currentDate.Day = 29 | currentDate.Month = June | max 30 days
-
-				// creadit.PaymentDay 10 | currentDate.Day = 15
-
+				var daysYear = DateTime.IsLeapYear(currentDate.Year) ? 366 : 365;
 				var daysInMonth = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
 
-				var creditPaymentDay = credit.PaymentDay;
-				if (creditPaymentDay > daysInMonth)
-					creditPaymentDay = daysInMonth;
+				var paymentDay = credit.PaymentDay > daysInMonth ? daysInMonth : credit.PaymentDay;
+				var paymentDate = currentDate.AddDays(paymentDay - currentDate.Day);
 
-				var paymentDate = currentDate.AddDays(creditPaymentDay - currentDate.Day);
-
+				bool isStartCreditDate = currentDate.Month == credit.StartDate.Month && currentDate.Year == credit.StartDate.Year;
 				//Платёж каждый месяц
-				if (currentDate.Day == paymentDate.Day)
+				if (currentDate.Day == paymentDate.Day && !isStartCreditDate)
 				{
-					currentAmount = currentAmount - bodyPayment;
+					currentAmount -= bodyPayment;
 
 					payments.Add(new CreditPaymentModel
 					{
 						Date = currentDate,
-						BodyPayment = bodyPayment.ToString("F"),
-						PercentsPayment = percentsPayment.ToString("F"),
-						RemainingAmount = currentAmount.ToString("F")
+						BodyPayment = bodyPayment,
+						PercentsPayment = percentsPayment,
+						RemainingAmount = currentAmount
 					});
 
 					percentsPayment = 0;
 				}
 
-				var daysYear = DateTime.IsLeapYear(currentDate.Year) ? 366 : 365;
-				percentsPayment = percentsPayment + CalculateAmountPercents(currentAmount, credit.InterestRate, daysYear);
-
+				percentsPayment += CalculateDifferentiatedDayPayment(currentAmount, credit.InterestRate, daysYear);
 
 				currentDate = currentDate.AddDays(1);
 			}
@@ -70,31 +114,15 @@ namespace CreditPayment.Api.Services
 			return payments;
 		}
 
-		private decimal CalculateAmountPercents(decimal creditAmount, decimal interestRate, int daysYear)
+		private static int GetTotalMonths(DateTime startDate, DateTime endDate)
+		{
+			return ((endDate.Year - startDate.Year) * 12) + endDate.Month - startDate.Month;
+		}
+
+		private decimal CalculateDifferentiatedDayPayment(decimal creditAmount, decimal interestRate, int daysYear)
 		{
 			return creditAmount * interestRate / 100 / daysYear;
 		}
-		private decimal CalculateRemaningAmountPercents(decimal creditAmount, decimal interestRate, int daysYear, int totalDays)
-		{
-			return creditAmount * interestRate / 100 / daysYear * totalDays;
-		}
-		private decimal CalculateDifferentiatedPayment(decimal loanAmount, decimal interestRate, int numberOfDays, int paymentNumber)
-		{
-            decimal monthlyInterestRate = interestRate / 12 / 100;
-            decimal principalPayment = loanAmount / numberOfDays * (paymentNumber - 1);
-            decimal interestPayment = loanAmount * monthlyInterestRate;
-            decimal differentiatedPayment = principalPayment + interestPayment;
-			return differentiatedPayment;
-		}
-		private decimal CalculateAnnuityPayment(decimal interestRate, decimal amount, int durationInMonths)
-		{
-			decimal mountPercent = interestRate / (100 * 12);
-			var annuityPayment = amount *
-				(mountPercent /
-				(decimal)(1 - Math.Pow((double)(1 + mountPercent), -durationInMonths)));
-			// остаточные месяцы!!!
 
-			return annuityPayment;
-		}
 	}
 }

@@ -16,7 +16,7 @@ namespace CreditPayment.Api.Controllers
 			this.loanService = loanService;
 		}
 
-        [HttpPost]
+        [HttpPost("calculate")]
         public IActionResult CalculatePaymentSchedule([FromBody] CreditRequestModel inputModel)
 		{
 			if (!ModelState.IsValid)
